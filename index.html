@@ -1,120 +1,235 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Panel sterujący botnetem - luka bts</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📡 Requesty na żywo</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background-color: #000;
-            color: #0f0;
-            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(145deg, #0b0e1a, #1a1f2f);
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: #fff;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 60px 70px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: 0.3s;
+        }
+        .label {
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #8892b0;
+            margin-bottom: 20px;
+        }
+        .counter {
+            font-size: 8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #64ffda, #48c9b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+        .counter.pop {
+            transform: scale(1.08);
+        }
+        .status {
+            margin-top: 30px;
+            font-size: 1rem;
+            color: #a8b2d1;
+            display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            text-align: center;
+            gap: 10px;
         }
-
-        h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
+        .dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #f05353;
+            transition: 0.3s;
         }
-
-        p {
-            font-size: 20px;
-            margin-bottom: 30px;
+        .dot.online {
+            background: #64ffda;
+            box-shadow: 0 0 12px #64ffda88;
         }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 100%;
-            max-width: 450px;
+        .dot.sim {
+            background: #f0b453;
+            box-shadow: 0 0 12px #f0b45388;
         }
-
-        input, button {
-            padding: 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            background-color: #000;
-            color: #0f0;
+        .sub {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #5a6488;
         }
-
-        input {
-            background-color: #111;
-        }
-
-        button {
-            background-color: #00ff00;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #00cc00;
-        }
-
-        #botCount {
-            font-size: 24px;
-            margin-bottom: 20px;
+        @media (max-width: 600px) {
+            .card { padding: 40px 30px; }
+            .counter { font-size: 5rem; }
         }
     </style>
 </head>
 <body>
-    <h1>Panel sterujący botnetem - luka bts</h1>
-    <div id="botCount">Liczba aktywnych botów: <span id="botCountValue">0</span></div>
-    <p>Wyślij komendę do botów</p>
 
-    <form id="attackForm">
-        <label for="target">Cel ataku:</label>
-        <input type="text" id="target" name="target" value="https://atakujesz.com" placeholder="np. https://atakujesz.com" required>
+<div class="card">
+    <div class="label">📨 Odebrane requesty</div>
+    <div class="counter" id="counterDisplay">0</div>
+    <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Łączenie…</span>
+    </div>
+    <div class="sub" id="subInfo">symulacja (brak WebSocket)</div>
+</div>
 
-        <label for="botCount">Liczba botów:</label>
-        <input type="number" id="botCount" name="botCount" value="10" min="1" required>
+<script>
+    (function() {
+        // DOM
+        const counterEl = document.getElementById('counterDisplay');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const subInfo = document.getElementById('subInfo');
 
-        <button type="submit">Uruchom atak</button>
-    </form>
+        let count = 0;
+        let isConnected = false;
+        let socket = null;
+        let simInterval = null;
 
-    <script>
-        // Pobierz liczbę aktywnych botów
-        function getBotCount() {
-            fetch('https://zulekzulowski9-jpg.github.io/lukabots/no_think/botcount')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("botCountValue").textContent = data.count;
-                })
-                .catch(error => {
-                    console.error('Błąd podczas pobierania liczby botów:', error);
-                });
+        // Aktualizacja widoku licznika z animacją
+        function updateCounter(newCount) {
+            if (newCount === count) return;
+            count = newCount;
+            counterEl.textContent = count;
+            // animacja "pop"
+            counterEl.classList.remove('pop');
+            void counterEl.offsetWidth; // wymuszenie reflow
+            counterEl.classList.add('pop');
+            setTimeout(() => counterEl.classList.remove('pop'), 200);
         }
 
-        // Aktualizuj licznik co 5 sekund
-        setInterval(getBotCount, 5000);
-        getBotCount(); // Pobierz raz na początku
+        // Ustaw status połączenia
+        function setStatus(connected, sim = false) {
+            isConnected = connected;
+            if (connected) {
+                statusDot.className = 'dot online';
+                statusText.textContent = 'Połączono na żywo';
+                subInfo.textContent = 'dane z WebSocket';
+            } else if (sim) {
+                statusDot.className = 'dot sim';
+                statusText.textContent = 'Symulacja';
+                subInfo.textContent = 'symulacja (brak WebSocket)';
+            } else {
+                statusDot.className = 'dot';
+                statusText.textContent = 'Rozłączono';
+                subInfo.textContent = 'oczekiwanie na połączenie…';
+            }
+        }
 
-        document.getElementById("attackForm").addEventListener("submit", function (e) {
-            e.preventDefault();
+        // Rozpocznij symulację (co 2 sekundy +1)
+        function startSimulation() {
+            if (simInterval) return;
+            // Zacznij od aktualnego licznika (jeśli był 0, to 0)
+            simInterval = setInterval(() => {
+                updateCounter(count + 1);
+            }, 2000);
+            setStatus(false, true);
+        }
 
-            const target = document.getElementById("target").value;
-            const botCount = document.getElementById("botCount").value;
+        // Zatrzymaj symulację
+        function stopSimulation() {
+            if (simInterval) {
+                clearInterval(simInterval);
+                simInterval = null;
+            }
+        }
 
-            // Wysyłanie komend do serwera C2
-            fetch('https://zulekzulowski9-jpg.github.io/lukabots/no_think/attack')
-                .then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/target?${target}`))
-                .then(() => fetch(`https://zulekzulowski9-jpg.github.io/lukabots/no_think/itr?${botCount}`))
-                .then(() => {
-                    alert("Atak zaczął się!");
-                })
-                .catch(error => {
-                    console.error('Błąd podczas wysyłania komend:', error);
-                    alert("Błąd podczas wysyłania komend. Sprawdź adres serwera.");
-                });
-        });
-    </script>
+        // Połącz przez WebSocket
+        function connectWebSocket() {
+            // Określamy adres WebSocket – próbujemy pod tym samym hostem i portem 3000 (lub bieżący port)
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.hostname;
+            // Jeśli uruchamiamy na GitHub Pages, port 3000 nie będzie działał – wtedy użyjemy symulacji
+            const port = 3000;
+            const wsUrl = `${protocol}//${host}:${port}`;
+
+            try {
+                socket = new WebSocket(wsUrl);
+            } catch (e) {
+                // Jeśli błąd (np. nieprawidłowy adres) – przejdź do symulacji
+                startSimulation();
+                return;
+            }
+
+            socket.onopen = function() {
+                console.log('WebSocket połączony');
+                stopSimulation(); // zatrzymaj symulację
+                setStatus(true, false);
+            };
+
+            socket.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'updateCount' && typeof data.count === 'number') {
+                        updateCounter(data.count);
+                    }
+                } catch (e) {
+                    // ignoruj
+                }
+            };
+
+            socket.onclose = function() {
+                console.log('WebSocket rozłączony');
+                setStatus(false, false);
+                // Po chwili spróbuj ponownie połączyć
+                setTimeout(() => {
+                    if (!isConnected) {
+                        // Jeśli nadal brak połączenia, włącz symulację
+                        startSimulation();
+                    }
+                }, 3000);
+            };
+
+            socket.onerror = function(err) {
+                console.warn('Błąd WebSocket:', err);
+                // Nie zamykamy automatycznie – obsłuży to onclose
+            };
+        }
+
+        // Inicjalizacja – spróbuj połączyć, a jeśli nie, po 3s włącz symulację
+        function init() {
+            // Najpierw ustaw stan oczekiwania
+            setStatus(false, false);
+            // Spróbuj połączyć
+            connectWebSocket();
+
+            // Zabezpieczenie: jeśli po 3 sekundach nadal brak połączenia, włącz symulację
+            setTimeout(() => {
+                if (!isConnected && !simInterval) {
+                    startSimulation();
+                }
+            }, 3000);
+        }
+
+        // Uruchom
+        init();
+    })();
+</script>
+
 </body>
 </html>
